@@ -13,20 +13,13 @@ void _settingCOM()
     DEBUG_MSG_P(PSTR("Setting baudrate of UART_PORT to 9600.\n"));
 }
 
-void _settingBuzzer()
-{
-    // Set buzzer pin to ouput
-    i2cuart.pinMode(1, OUTPUT);
-    // Set buzzer to low at begin
-    i2cuart.digitalWrite(BUZZER_PIN, LOW);
-}
 String _sendCMD(String command)
 {
     String responce = RESPONCE_ERROR;
     DEBUG_MSG_P(PSTR("[MCU] Command request: %s\n"), command.c_str());
     UART_PORT.println(command);
     //Read responce from balance
-    while(UART_PORT.available() >0)
+    while(UART_PORT.available() > 0)
     {
         responce = UART_PORT.readString();
         DEBUG_MSG_P(PSTR("[ICS449] Responce: %s\n\n"), responce.c_str());
@@ -203,7 +196,10 @@ void _sendDataWithSTMode()
         } else
         {    
             DEBUG_MSG_P(PSTR("[MCU] Start send data\n"));
-            if(wifiConnected() == true) // can not connect to wifi
+            // Turn on buzzer when starting process
+            turnOnBuzzer();
+            // check for wifi/mqtt connection
+            if((wifiConnected() == false)||(mqttConnected() == false)) // can not connect to wifi
             {
                 // send data to lora receiver
                 Lora_SendWeight(g_mqtt_packet_data.weight_str, g_mqtt_packet_data.number_n);
@@ -212,7 +208,7 @@ void _sendDataWithSTMode()
                 // handle by MQTT
                 mqttSend4Balance(topic_str.c_str(), g_mqtt_packet_data.weight_str.c_str());
                 // lora should be sleep 
-                lora.sleep();
+                // lora.sleep();
             }
             DisplayMessage("Weight: " + g_mqtt_packet_data.weight_str + " kg");
             DEBUG_MSG_P(PSTR("[MCU] Get weight: success\n"));
@@ -330,14 +326,15 @@ int8_t _settingBalance()
 
 void _checkWifiConnect()
 {
-    if(wifiConnected() == false)
+    // can not connect to wifi or mqtt broker
+    if((wifiConnected()||mqttConnected()) == false)
     {
-        // buzzer and LED : High
-        i2cuart.digitalWrite(1, HIGH);
+        // turn On buzzer
+        turnOnBuzzer();
     } else
     {
-        // buzzer and LED: Low
-        i2cuart.digitalWrite(1, LOW);
+        // turn Off buzzer
+        turnOffBuzzer();
     }
 }
 
@@ -347,7 +344,7 @@ void icsSetup()
     // setting baudrate 9600 between balance [RS232] and MCU [TTL]
     _settingCOM();
     // setting for buzzer on io extender
-    _settingBuzzer();
+    setupPin();
     // lora configuration
     LoRaSetup();
     // setting balance ICS449

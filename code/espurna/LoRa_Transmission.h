@@ -40,6 +40,8 @@
 #define TYPE_1  "Tôm sú"
 #define TYPE_2  "Khác"
 
+#define RES_ERROR_BY_WIFI_CONNECTION    "ERROR"
+
 extern SX1278 lora;
 
 enum e_number_type { 

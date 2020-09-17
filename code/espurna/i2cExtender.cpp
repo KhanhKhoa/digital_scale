@@ -26,3 +26,38 @@
 // I2C address: 0X90 for write and 0X91 for read
 // <=> SC16IS750_ADDRESS_AA
 SC16IS750 i2cuart = SC16IS750(SC16IS750_PROTOCOL_I2C,SC16IS750_ADDRESS_AA);
+
+void setupPin()
+{
+    // Set buzzer pin to ouput
+    i2cuart.pinMode(BUZZER_PIN, OUTPUT);
+    // Set LED pin to output
+    i2cuart.pinMode(LED_PIN, OUTPUT);
+    // Set the default status to OFF
+    i2cuart.digitalWrite(BUZZER_PIN, LOW);
+    i2cuart.digitalWrite(LED_PIN, LOW);
+}
+
+void turnOnLED(uint8_t led_pin, uint8_t delay_time)
+{
+    i2cuart.digitalWrite(LED_PIN, HIGH);
+    nice_delay(delay_time*1000);
+    i2cuart.digitalWrite(LED_PIN, LOW);
+}
+
+void turnOnBuzzerWithTime(uint8_t delay_time)
+{
+    i2cuart.digitalWrite(BUZZER_PIN, HIGH);
+    nice_delay(delay_time*1000);
+    i2cuart.digitalWrite(BUZZER_PIN, LOW);
+}
+
+void turnOnBuzzer()
+{
+    i2cuart.digitalWrite(BUZZER_PIN, HIGH);
+}
+
+void turnOffBuzzer()
+{
+    i2cuart.digitalWrite(BUZZER_PIN, LOW);
+}

@@ -877,7 +877,19 @@ void mqttFlush() {
 }
 
 void mqttFlush4Balance() {
-    if (!_mqtt.connected()) return;
+    if (!_mqtt.connected()) {
+        DEBUG_MSG_P(PSTR("[MQTT] Failed when sending data\n\n"));
+
+        #ifdef LORA_RECEIVER
+        LoRa_Transmit(RES_ERROR_BY_WIFI_CONNECTION);
+        nice_delay(50);
+        #endif
+        #ifdef LORA_SENDER
+        DisplayMessage("Failed. Try again");
+        #endif
+        return;
+    }
+
     if (_mqtt_queue.size() == 0) return; 
 
     // Build tree recursively
@@ -904,7 +916,8 @@ void mqttFlush4Balance() {
     root.printTo(output);
     jsonBuffer.clear();
 
-    mqttSendRaw(mqttTopic(MQTT_TOPIC_DATA, false).c_str(), output.c_str(), false);
+    bool mqtt_result = false;
+    mqtt_result = mqttSendRaw(mqttTopic(MQTT_TOPIC_DATA, false).c_str(), output.c_str(), false);
 
     // Clear queue
     for (unsigned char i = 0; i < _mqtt_queue.size(); i++) {
@@ -916,6 +929,22 @@ void mqttFlush4Balance() {
     }
     _mqtt_queue.clear();
 
+    if(mqtt_result == false)
+    {
+        // failed when sending data to mqtt broker
+        DEBUG_MSG_P(PSTR("[MQTT] Failed when sending data\n\n"));
+        #ifdef LORA_RECEIVER
+        LoRa_Transmit(RES_ERROR_BY_WIFI_CONNECTION);
+        nice_delay(50);
+        #endif
+    } else
+    {
+        // data has been sent to mqtt broker
+        #ifdef LORA_SENDER
+        turnOffBuzzer();
+        #endif
+        DEBUG_MSG_P(PSTR("[MQTT] Data has been sent to MQTT broker\n\n"));
+    }
 }
 
 int8_t mqttEnqueue(const char * topic, const char * message, unsigned char parent) {

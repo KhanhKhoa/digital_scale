@@ -353,27 +353,35 @@ void LoRa_Receive_Callback()
         #ifdef LORA_RECEIVER
         // parsing packet data
         _loraParse(strdup(&g_data_str[0]));
-
-        // send data to MQTT broker
-        mqttSend4Balance(topic_str.c_str(), g_mqtt_packet_data.weight_str.c_str());
-
-        // send responce to lora sender
-        LoRa_Transmit(g_mqtt_packet_data.ID_str);
+        if((wifiConnected() == true)&&(mqttConnected() == true))
+        {
+            // send data to MQTT broker
+            mqttSend4Balance(topic_str.c_str(), g_mqtt_packet_data.weight_str.c_str());
+            LoRa_Transmit(g_mqtt_packet_data.ID_str);
+        } else
+        {
+            // send responce to lora sender
+            LoRa_Transmit(RES_ERROR_BY_WIFI_CONNECTION);
+        }
         #endif
 
         #ifdef LORA_SENDER
         // Receive a different message ID
         if(g_data_str != g_mqtt_packet_data.ID_str)
         {
-            // Re-send packet data
             DEBUG_MSG_P(PSTR("[Lora] Can not receive packet data\n\n"));
-            // i2cuart.println("[Lora] Can not receive packet data");
-        } else
+        } 
+        else if(g_data_str == RES_ERROR_BY_WIFI_CONNECTION)
+        {
+            DEBUG_MSG_P(PSTR("[Lora] The receiver was not connected to wifi or MQTT broker\n\n"));
+        }
+        else
         {
             DEBUG_MSG_P(PSTR("[Lora] Data has been sent to MQTT broker\n\n"));
             // Increase turn number
             g_mqtt_packet_data.number_n++;
-            // i2cuart.println("[Lora] Data has been sent to MQTT broker");
+            // Turn off buzzer when ending process successfully
+            turnOffBuzzer();
         }
         #endif
 
